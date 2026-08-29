@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2311/2311931.png">
+    <link rel="manifest" href="./manifest.json">
     <title>Калькулятор цен</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,30 +23,37 @@
         }
 
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px 16px; }
-        .app-container { max-width: 480px; margin: 0 auto; }
+        .app-container { max-width: 480px; margin: 0 auto; padding-bottom: 40px; }
         
+        /* Tabs */
+        .tabs-container { display: flex; max-width: 480px; margin: 0 auto 24px auto; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 6px; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-weight: 600; font-size: 14px; border-radius: 12px; cursor: pointer; color: var(--muted); transition: 0.3s; }
+        .tab.active { background: var(--input); color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
         /* Selector */
         .mode-selector { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden; }
         .mode-header { padding: 16px 20px; display: flex; justify-content: space-between; cursor: pointer; font-weight: 600; }
         .mode-options { max-height: 0; transition: 0.3s ease; overflow: hidden; }
         .open .mode-options { max-height: 200px; }
-        .mode-option { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 15px; }
+        .mode-option { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 15px; cursor: pointer; }
         .mode-option.active { color: var(--accent); }
+        .mode-option:hover { background: var(--input); }
 
         /* Card */
         .product-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; transition: 0.3s ease; }
         .product-card.best-deal { border-color: var(--green); background: linear-gradient(135deg, var(--card), rgba(74, 222, 128, 0.05)); }
-        .card-head { display: flex; justify-content: space-between; margin-bottom: 12px; color: #8b93a6; font-size: 13px; font-weight: 600; text-transform: uppercase; }
+        .card-head { display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center; }
         
         /* Inputs */
         .input-row { display: flex; gap: 10px; }
         .input-group { flex: 1; position: relative; }
-        .input-group label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 700; }
-        .input-group input { 
+        .input-group label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+        .input-group input, .input-group select { 
             width: 100%; padding: 14px 12px; background: var(--input); border: 1px solid var(--border); 
             border-radius: 12px; color: #fff; font-size: 18px; font-weight: 600; outline: none; transition: 0.2s; 
         }
-        .input-group input:focus { border-color: var(--accent); background: #161c26; box-shadow: 0 0 0 4px var(--accent-glow); }
+        .input-group select { font-size: 15px; appearance: none; }
+        .input-group input:focus, .input-group select:focus { border-color: var(--accent); background: #161c26; box-shadow: 0 0 0 4px var(--accent-glow); }
         .input-suffix { position: absolute; right: 12px; bottom: 15px; color: var(--muted); font-size: 13px; pointer-events: none; }
 
         /* Results */
@@ -54,19 +62,31 @@
         .best-badge { background: var(--green-glow); color: var(--green); font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
         .worse-badge { color: var(--red); font-size: 12px; font-weight: 500; }
 
-        .add-btn { width: 100%; padding: 16px; background: none; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--accent); font-weight: 600; margin-bottom: 24px; }
+        .add-btn, .calc-btn { width: 100%; padding: 16px; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .add-btn { background: none; border: 1px dashed var(--border); color: var(--accent); margin-bottom: 12px; }
+        .clear-btn { width: 100%; padding: 16px; background: none; border: none; color: var(--muted); font-weight: 500; cursor: pointer; margin-bottom: 24px; }
+        .calc-btn { background: var(--accent); border: none; color: #fff; font-size: 16px; margin-bottom: 24px; box-shadow: 0 4px 12px var(--accent-glow); }
+        .calc-btn:active { transform: scale(0.98); }
+
         .summary { background: var(--card); border-radius: var(--radius); padding: 18px; border: 1px solid var(--border); display: none; }
         .visible { display: block; animation: fadeIn 0.3s; }
         .verdict { background: var(--green-glow); padding: 14px; border-radius: 12px; color: var(--green); font-weight: 600; margin-bottom: 12px; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .delete-btn { color: var(--red); background: rgba(248, 113, 113, 0.1); border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; }
+        .delete-btn { color: var(--red); background: rgba(248, 113, 113, 0.1); border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; }
+        
         input::-webkit-inner-spin-button, input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; }
+        input[type=number], input[type=text] { -moz-appearance: textfield; }
     </style>
 </head>
 <body>
-    <div class="app-container">
+    <div class="tabs-container">
+        <div class="tab active" onclick="switchTab('price')">🛒 Сравнение цен</div>
+        <div class="tab" onclick="switchTab('percent')">🧮 Проценты</div>
+    </div>
+
+    <!-- APP 1: PRICE CALCULATOR -->
+    <div class="app-container" id="priceApp">
         <div class="mode-selector" id="modeSelector">
             <div class="mode-header" onclick="this.parentElement.classList.toggle('open')">
                 <span>Сравнить <span id="modeLabel" style="color:var(--accent)">за единицу</span></span>
@@ -81,56 +101,113 @@
 
         <div id="productsContainer"></div>
         <button class="add-btn" onclick="addProduct()">+ Добавить товар</button>
+        <button class="clear-btn" onclick="clearAll()">Очистить всё</button>
 
         <div class="summary" id="summaryCard">
             <div id="verdictText" class="verdict"></div>
         </div>
     </div>
 
-    <script>
-        // --- PWA КОНФИГУРАЦИЯ (КАК В ПРИМЕРЕ) ---
-        const manifest = {
-            "name": "Калькулятор цен",
-            "short_name": "Цены",
-            "start_url": ".",
-            "display": "standalone",
-            "background_color": "#0a0e14",
-            "theme_color": "#0a0e14",
-            "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/2311/2311931.png", "sizes": "512x512", "type": "image/png" }]
-        };
-        const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-        const link = document.createElement('link');
-        link.rel = 'manifest';
-        link.href = URL.createObjectURL(blob);
-        document.head.appendChild(link);
+    <!-- APP 2: PERCENT CALCULATOR -->
+    <div class="app-container" id="percentApp" style="display: none;">
+        <div class="mode-selector" style="margin-bottom: 16px; overflow: visible;">
+            <div class="input-group" style="padding: 16px;">
+                <label>Что вычислить</label>
+                <select id="pctOp" onchange="renderPct()">
+                    <option value="1">Найти процент от числа</option>
+                    <option value="2">Сколько процентов составляет число от числа</option>
+                    <option value="3">Прибавить процент к числу</option>
+                    <option value="4">Вычесть процент из числа</option>
+                    <option value="5">На сколько % одно число больше другого</option>
+                    <option value="6">На сколько % одно число меньше другого</option>
+                    <option value="7">Найти 100 процентов</option>
+                    <option value="8">Найти процентное изменение числа</option>
+                </select>
+            </div>
+        </div>
 
-        // --- ЛОГИКА ПРИЛОЖЕНИЯ ---
-        let mode = 'unit';
-        let products = [{ id: 1, p: '', q: '' }, { id: 2, p: '', q: '' }];
+        <div class="product-card" style="margin-bottom: 24px;">
+            <div class="card-head"><span style="color: #8b93a6; font-size: 11px; font-weight: 700; text-transform: uppercase;">Значения</span></div>
+            <div class="input-row" style="align-items: center; margin-bottom: 16px;">
+                <div class="input-group">
+                    <input type="text" id="pctIn1" placeholder="0" inputmode="decimal">
+                </div>
+                <div id="pctSep" style="color: var(--muted); font-weight: 600; font-size: 14px; padding: 0 4px; text-align: center; white-space: nowrap;">% от</div>
+                <div class="input-group">
+                    <input type="text" id="pctIn2" placeholder="0" inputmode="decimal">
+                </div>
+                <div id="pctEnd" style="color: var(--muted); font-weight: 600; font-size: 14px; padding-left: 8px; display: none;">%</div>
+            </div>
+
+            <div class="input-group" style="display: flex; align-items: center; gap: 12px;">
+                <label style="margin: 0;">Округлять до</label>
+                <select id="pctRound" style="padding: 10px 12px; flex: 0 0 60px;">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+                <span style="font-size: 12px; color: var(--muted);">знаков</span>
+            </div>
+        </div>
+
+        <button class="calc-btn" onclick="calcPct()">РАССЧИТАТЬ</button>
+
+        <div class="summary" id="pctResultCard">
+            <div id="pctResultText" class="verdict" style="font-size: 28px; text-align: center; padding: 20px;">0</div>
+            <div id="pctFormula" style="text-align: center; color: var(--muted); font-size: 14px; margin-top: 8px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- PWA КОНФИГУРАЦИЯ ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW Error', err));
+        }
+
+        const haptic = (ms) => { if (navigator.vibrate) navigator.vibrate(ms); };
+        function parseInput(val) { return parseFloat(val.toString().replace(',', '.')); }
+
+        // --- ЛОГИКА ВКЛАДОК ---
+        function switchTab(tab) {
+            haptic(10);
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById('priceApp').style.display = tab === 'price' ? 'block' : 'none';
+            document.getElementById('percentApp').style.display = tab === 'percent' ? 'block' : 'none';
+            localStorage.setItem('activeTab', tab);
+        }
+        switchTab(localStorage.getItem('activeTab') || 'price');
+
+        // --- ЛОГИКА ЦЕН ---
+        let mode = localStorage.getItem('priceMode') || 'unit';
+        let products = JSON.parse(localStorage.getItem('priceProducts')) || [
+            { id: 1, name: '', p: '', q: '' }, { id: 2, name: '', p: '', q: '' }
+        ];
         const conf = {
             kg: { label: 'за килограмм', s: 'г', res: '₽/кг', mult: 1000 },
             liter: { label: 'за литр', s: 'мл', res: '₽/л', mult: 1000 },
             unit: { label: 'за единицу', s: 'шт', res: '₽/шт', mult: 1 }
         };
 
-        const haptic = (ms) => { if (navigator.vibrate) navigator.vibrate(ms); };
-
         function setMode(m) {
-            mode = m; haptic(15);
-            document.getElementById('modeLabel').textContent = conf[m].label;
+            mode = m; localStorage.setItem('priceMode', m); haptic(15);
             document.getElementById('modeSelector').classList.remove('open');
             render();
         }
 
         function addProduct() {
-            haptic(20);
-            products.push({ id: Date.now(), p: '', q: '' });
-            render();
+            haptic(20); products.push({ id: Date.now(), name: '', p: '', q: '' }); render();
         }
 
         function removeProduct(id) {
-            haptic([10, 30, 10]);
-            products = products.filter(p => p.id !== id);
+            haptic([10, 30, 10]); products = products.filter(p => p.id !== id); render();
+        }
+
+        function clearAll() {
+            haptic([20, 40, 20]);
+            products = [{ id: Date.now(), name: '', p: '', q: '' }, { id: Date.now()+1, name: '', p: '', q: '' }];
             render();
         }
 
@@ -140,25 +217,27 @@
         }
 
         function calculate() {
+            localStorage.setItem('priceProducts', JSON.stringify(products));
             const vals = products.map(p => {
-                const res = (parseFloat(p.p) / parseFloat(p.q)) * conf[mode].mult;
-                return isNaN(res) || res === Infinity || res <= 0 ? 0 : res;
+                const price = parseInput(p.p); const qty = parseInput(p.q);
+                if (isNaN(price) || isNaN(qty) || qty <= 0) return 0;
+                const res = (price / qty) * conf[mode].mult;
+                return isNaN(res) || !isFinite(res) || res <= 0 ? 0 : res;
             });
             const valid = vals.filter(v => v > 0);
             const min = valid.length ? Math.min(...valid) : Infinity;
 
             products.forEach((p, i) => {
                 const card = document.querySelector(`[data-id="${p.id}"]`);
+                if(!card) return;
                 const cur = vals[i];
                 card.classList.remove('best-deal');
-                const badge = card.querySelector('.badge-box');
-                badge.innerHTML = '';
+                const badge = card.querySelector('.badge-box'); badge.innerHTML = '';
                 
                 if (cur > 0) {
                     card.querySelector('.price-val').textContent = cur < 10 ? cur.toFixed(2) : Math.round(cur);
                     if (cur === min && valid.length > 1) {
-                        card.classList.add('best-deal');
-                        badge.innerHTML = '<span class="best-badge">Выгодно</span>';
+                        card.classList.add('best-deal'); badge.innerHTML = '<span class="best-badge">Выгодно</span>';
                     } else if (cur > min && min !== Infinity) {
                         badge.innerHTML = `<span class="worse-badge">+${Math.round((cur-min)/min*100)}%</span>`;
                     }
@@ -168,26 +247,92 @@
             const sum = document.getElementById('summaryCard');
             if (valid.length > 1) {
                 sum.classList.add('visible');
-                document.getElementById('verdictText').textContent = `Товар ${vals.indexOf(min) + 1} самый выгодный`;
+                const bestIdx = vals.indexOf(min);
+                const bestName = products[bestIdx].name || `Товар ${bestIdx + 1}`;
+                document.getElementById('verdictText').textContent = `${bestName} — самый выгодный`;
             } else sum.classList.remove('visible');
         }
 
         function render() {
+            document.getElementById('modeLabel').textContent = conf[mode].label;
             document.getElementById('productsContainer').innerHTML = products.map((p, i) => `
                 <div class="product-card" data-id="${p.id}">
-                    <div class="card-head"><span>Товар ${i + 1}</span>
+                    <div class="card-head">
+                        <input type="text" value="${p.name}" oninput="update(${p.id},'name',this.value)" placeholder="Название товара ${i + 1}" style="background:transparent; border:none; color:#8b93a6; font-size:13px; font-weight:600; text-transform:uppercase; outline:none; width: 70%; padding: 4px 0;">
                         ${products.length > 2 ? `<button class="delete-btn" onclick="removeProduct(${p.id})">×</button>` : ''}
                     </div>
                     <div class="input-row">
-                        <div class="input-group"><label>ЦЕНА</label><input type="number" value="${p.p}" oninput="update(${p.id},'p',this.value)" placeholder="0" inputmode="decimal"><span class="input-suffix">₽</span></div>
-                        <div class="input-group"><label>${conf[mode].label.split(' ')[1].toUpperCase()}</label><input type="number" value="${p.q}" oninput="update(${p.id},'q',this.value)" placeholder="0" inputmode="decimal"><span class="input-suffix">${conf[mode].s}</span></div>
+                        <div class="input-group"><label>ЦЕНА</label><input type="text" value="${p.p}" oninput="update(${p.id},'p',this.value)" placeholder="0" inputmode="decimal"><span class="input-suffix">₽</span></div>
+                        <div class="input-group"><label>${conf[mode].label.split(' ')[1].toUpperCase()}</label><input type="text" value="${p.q}" oninput="update(${p.id},'q',this.value)" placeholder="0" inputmode="decimal"><span class="input-suffix">${conf[mode].s}</span></div>
                     </div>
                     <div class="res-row"><div><span class="price-val">—</span> <small style="color:var(--muted)">${conf[mode].res}</small></div><div class="badge-box"></div></div>
                 </div>`).join('');
             calculate();
         }
-
         render();
+
+        // --- ЛОГИКА ПРОЦЕНТОВ ---
+        const pctLabels = {
+            "1": { p1: "процент", p2: "число", sep: "% от", end: "" },
+            "2": { p1: "число 1", p2: "число 2", sep: "от", end: "" },
+            "3": { p1: "число", p2: "процент", sep: "+", end: "%" },
+            "4": { p1: "число", p2: "процент", sep: "-", end: "%" },
+            "5": { p1: "число 1", p2: "число 2", sep: "больше чем", end: "" },
+            "6": { p1: "число 1", p2: "число 2", sep: "меньше чем", end: "" },
+            "7": { p1: "число", p2: "процент", sep: "это", end: "%" },
+            "8": { p1: "было", p2: "стало", sep: "→", end: "" }
+        };
+
+        function renderPct() {
+            const op = document.getElementById('pctOp').value;
+            const c = pctLabels[op];
+            
+            document.getElementById('pctSep').textContent = c.sep;
+            document.getElementById('pctIn1').placeholder = c.p1;
+            document.getElementById('pctIn2').placeholder = c.p2;
+            
+            if(c.end) {
+                document.getElementById('pctEnd').textContent = c.end;
+                document.getElementById('pctEnd').style.display = 'block';
+            } else {
+                document.getElementById('pctEnd').style.display = 'none';
+            }
+            document.getElementById('pctResultCard').classList.remove('visible');
+        }
+
+        function calcPct() {
+            haptic(20);
+            const op = document.getElementById('pctOp').value;
+            const v1 = parseInput(document.getElementById('pctIn1').value);
+            const v2 = parseInput(document.getElementById('pctIn2').value);
+            const round = parseInt(document.getElementById('pctRound').value);
+            
+            if (isNaN(v1) || isNaN(v2)) return;
+
+            let res = 0; let formula = "";
+            switch(op) {
+                case "1": res = (v1 / 100) * v2; formula = `${v1}% от ${v2}`; break;
+                case "2": res = (v1 / v2) * 100; formula = `${v1} от ${v2}`; break;
+                case "3": res = v1 + (v1 * v2 / 100); formula = `${v1} + ${v2}%`; break;
+                case "4": res = v1 - (v1 * v2 / 100); formula = `${v1} - ${v2}%`; break;
+                case "5": res = ((v1 - v2) / v2) * 100; formula = `На сколько ${v1} больше ${v2}`; break;
+                case "6": res = ((v2 - v1) / v2) * 100; formula = `На сколько ${v1} меньше ${v2}`; break;
+                case "7": res = (v1 / v2) * 100; formula = `Если ${v1} это ${v2}%, то 100%`; break;
+                case "8": res = ((v2 - v1) / Math.abs(v1)) * 100; formula = `Изменение от ${v1} до ${v2}`; break;
+            }
+
+            const factor = Math.pow(10, round);
+            let finalRes = Math.round(res * factor) / factor;
+            let displayRes = finalRes.toString();
+            
+            if (["2", "5", "6", "8"].includes(op)) displayRes += "%";
+            if (op === "8" && finalRes > 0) displayRes = "+" + displayRes;
+
+            document.getElementById('pctResultText').textContent = displayRes;
+            document.getElementById('pctFormula').textContent = formula;
+            document.getElementById('pctResultCard').classList.add('visible');
+        }
+        renderPct();
     </script>
 </body>
 </html>

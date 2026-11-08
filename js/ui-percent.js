@@ -84,14 +84,14 @@
     valCard.id = 'pctValCard';
 
     var valTop = document.createElement('div');
-    valTop.className = 'card-top';
+    valTop.className = 'card-top pct-card-top';
     var valTitle = document.createElement('span');
-    valTitle.style.fontSize = '11px';
-    valTitle.style.fontWeight = '700';
-    valTitle.style.color = 'var(--text-secondary)';
-    valTitle.style.textTransform = 'uppercase';
+    valTitle.className = 'pct-card-heading';
     valTitle.textContent = 'ЗНАЧЕНИЯ ДЛЯ РАСЧЁТА';
     valTop.appendChild(valTitle);
+
+    var btnGroup = document.createElement('div');
+    btnGroup.className = 'pct-header-actions';
 
     var swapBtn = document.createElement('button');
     swapBtn.type = 'button';
@@ -111,7 +111,33 @@
       notifyChange();
       UiPercent.calculate();
     });
-    valTop.appendChild(swapBtn);
+    btnGroup.appendChild(swapBtn);
+
+    var clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'clear-pct-btn';
+    clearBtn.title = 'Очистить значения';
+    clearBtn.setAttribute('aria-label', 'Очистить значения');
+    clearBtn.textContent = 'Очистить';
+    clearBtn.addEventListener('click', function() {
+      pctState.v1 = '';
+      pctState.v2 = '';
+      var in1 = document.getElementById('pctInput1');
+      var in2 = document.getElementById('pctInput2');
+      if (in1) {
+        in1.value = '';
+        in1.focus();
+      }
+      if (in2) in2.value = '';
+      var resCard = document.getElementById('pctResultCard');
+      if (resCard) resCard.classList.remove('visible');
+      triggerHaptic(10);
+      notifyChange();
+      UiPercent.calculate();
+    });
+    btnGroup.appendChild(clearBtn);
+
+    valTop.appendChild(btnGroup);
     valCard.appendChild(valTop);
 
     // Inputs Grid (2 balanced columns with operator in between)
@@ -414,7 +440,7 @@
     }
 
     if (resCard && resVal && formulaBox && stepBox) {
-      resVal.style.fontSize = '36px';
+      resVal.style.fontSize = '26px';
       resVal.style.color = 'var(--accent-light)';
       resVal.textContent = result.display;
       formulaBox.textContent = result.formula;
@@ -485,6 +511,17 @@
     var history = window.StorageManager.getHistory();
     if (!history.length) return;
 
+    var details = document.createElement('details');
+    details.className = 'history-accordion';
+
+    var summary = document.createElement('summary');
+    summary.className = 'history-summary';
+    summary.textContent = 'История вычислений (' + history.length + ')';
+    details.appendChild(summary);
+
+    var content = document.createElement('div');
+    content.className = 'history-content';
+
     var header = document.createElement('div');
     header.className = 'history-header';
 
@@ -497,13 +534,13 @@
     clearBtn.type = 'button';
     clearBtn.className = 'clear-history-btn';
     clearBtn.textContent = 'Очистить историю';
-    clearBtn.addEventListener('click', function() {
+    clearBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
       window.StorageManager.clearHistory();
       renderHistory();
     });
     header.appendChild(clearBtn);
-
-    histSection.appendChild(header);
+    content.appendChild(header);
 
     history.forEach(function(item) {
       var row = document.createElement('div');
@@ -529,8 +566,11 @@
         UiPercent.render();
       });
 
-      histSection.appendChild(row);
+      content.appendChild(row);
     });
+
+    details.appendChild(content);
+    histSection.appendChild(details);
   }
 
   root.UiPercent = UiPercent;

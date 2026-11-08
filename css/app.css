@@ -164,7 +164,7 @@ body {
   gap: 8px;
 }
 
-.theme-btn, .apk-btn, .icon-btn {
+.theme-btn, .icon-btn {
   background: var(--bg-surface-elevated);
   border: 1px solid var(--card-border);
   color: var(--text-secondary);
@@ -181,15 +181,10 @@ body {
   text-decoration: none;
 }
 
-.theme-btn:hover, .apk-btn:hover, .icon-btn:hover {
+.theme-btn:hover, .icon-btn:hover {
   background: var(--card-hover);
   color: var(--text-primary);
   border-color: var(--accent);
-}
-
-.apk-btn {
-  color: var(--accent-light);
-  border-color: var(--accent-glow);
 }
 
 /* Nav Tabs */
@@ -562,6 +557,52 @@ body {
 }
 
 /* Percent App Styles */
+.pct-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.pct-operator-chip {
+  padding-bottom: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pct-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .pct-inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .pct-operator-chip {
+    padding-bottom: 0;
+    margin: -4px auto;
+    background: var(--bg-surface);
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    border: 1px solid var(--card-border);
+  }
+}
+
 .swap-btn {
   background: var(--bg-surface-elevated);
   border: 1px solid var(--card-border);

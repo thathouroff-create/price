@@ -1,9 +1,8 @@
 # 🛒 Калькулятор цен и процентов (Price & Percent Calculator)
 
-Современное прогрессивное веб-приложение (PWA) и автономное Android-приложение для мгновенного расчёта выгодных цен на товары в магазине и решения любых задач с процентами.
+Современное прогрессивное веб-приложение (PWA) для мгновенного расчёта выгодных цен на товары в магазине и решения любых задач с процентами.
 
-🌐 **Онлайн-версия (GitHub Pages):** [https://thathouroff-create.github.io/price/](https://thathouroff-create.github.io/price/)  
-📲 **Скачать APK для Android:** [PriceCalc.apk](https://github.com/thathouroff-create/price/releases/latest/download/PriceCalc.apk)
+🌐 **Онлайн-версия (GitHub Pages):** [https://thathouroff-create.github.io/price/](https://thathouroff-create.github.io/price/)
 
 ---
 

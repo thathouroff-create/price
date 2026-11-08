@@ -9,7 +9,11 @@
   var state = null;
   var swRegistration = null;
 
-  document.addEventListener('DOMContentLoaded', initApp);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
 
   function initApp() {
     // 1. Load State
@@ -23,8 +27,9 @@
     applyTheme(state.theme);
     setupThemeToggle();
 
-    // 3. Initialize Tabs
+    // 3. Initialize Tabs & Touch Swipe
     setupTabs();
+    setupSwipe();
 
     // 5. Initialize Sub-modules
     var pricePanel = document.getElementById('panelPrice');
@@ -51,7 +56,7 @@
     }
   }
 
-  /* --- Tabs Management --- */
+  /* --- Tabs Management & Swipe Navigation --- */
   function setupTabs() {
     var tabs = document.querySelectorAll('.tab-btn');
     tabs.forEach(function(btn) {
@@ -85,8 +90,63 @@
     });
   }
 
-  function switchTab(tabKey) {
+  function setupSwipe() {
+    var mainEl = document.querySelector('main');
+    if (!mainEl) return;
+
+    var startX = 0;
+    var startY = 0;
+    var startTime = 0;
+    var isSwiping = false;
+
+    mainEl.addEventListener('touchstart', function(e) {
+      if (e.touches.length !== 1) return;
+      var target = e.target;
+      // Ignore swipe when user interacts with inputs, selects, buttons or interactive controls
+      if (target.closest('input, select, textarea, button, .pill-toggle, .delete-card-btn, .swap-btn, .clear-pct-btn')) {
+        isSwiping = false;
+        return;
+      }
+      isSwiping = true;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+    }, { passive: true });
+
+    mainEl.addEventListener('touchend', function(e) {
+      if (!isSwiping || e.changedTouches.length !== 1) return;
+      isSwiping = false;
+
+      var endX = e.changedTouches[0].clientX;
+      var endY = e.changedTouches[0].clientY;
+      var deltaX = endX - startX;
+      var deltaY = endY - startY;
+      var elapsed = Date.now() - startTime;
+
+      // Minimum swipe distance 45px, mostly horizontal (deltaX > 1.35 * deltaY), within 500ms
+      if (Math.abs(deltaX) >= 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.35 && elapsed <= 500) {
+        if (deltaX < 0) {
+          // Swipe Left: price -> percent
+          if (state.tab === 'price') {
+            switchTab('percent', 'slide-left');
+          }
+        } else {
+          // Swipe Right: percent -> price
+          if (state.tab === 'percent') {
+            switchTab('price', 'slide-right');
+          }
+        }
+      }
+    }, { passive: true });
+
+    mainEl.addEventListener('touchcancel', function() {
+      isSwiping = false;
+    }, { passive: true });
+  }
+
+  function switchTab(tabKey, direction) {
     if (tabKey !== 'price' && tabKey !== 'percent') tabKey = 'price';
+    var prevTab = state.tab;
     state.tab = tabKey;
     saveState();
 
@@ -103,9 +163,23 @@
 
     var panelPrice = document.getElementById('panelPrice');
     var panelPercent = document.getElementById('panelPercent');
+    var panels = [panelPrice, panelPercent];
+
+    var animClass = direction || (tabKey === 'percent' ? 'slide-left' : 'slide-right');
+
+    panels.forEach(function(p) {
+      if (p) {
+        p.classList.remove('slide-left', 'slide-right');
+      }
+    });
 
     if (panelPrice) panelPrice.classList.toggle('active', tabKey === 'price');
     if (panelPercent) panelPercent.classList.toggle('active', tabKey === 'percent');
+
+    var activePanel = tabKey === 'price' ? panelPrice : panelPercent;
+    if (activePanel && prevTab && prevTab !== tabKey) {
+      activePanel.classList.add(animClass);
+    }
 
     // Update location hash without jumping
     if (history.replaceState) {
@@ -205,5 +279,10 @@
     }
     toast.classList.add('show');
   }
+
+  window.App = {
+    init: initApp,
+    switchTab: switchTab
+  };
 
 })();

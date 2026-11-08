@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Swipe & Tabs Navigation Verification</title>
+</head>
+<body>
+  <h1>Running Swipe & Tabs Test Suite...</h1>
+  <div id="output"></div>
+
+  <!-- Test DOM replicating index.html structure -->
+  <div class="app-container">
+    <nav class="tabs-nav" role="tablist">
+      <button type="button" class="tab-btn" role="tab" id="tabPrice" data-tab="price" aria-selected="true">
+        <svg class="tab-icon" width="18" height="18"><path d="M0 0"/></svg>
+        <span class="tab-label-full">Сравнение цен</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabPercent" data-tab="percent" aria-selected="false">
+        <svg class="tab-icon" width="18" height="18"><path d="M0 0"/></svg>
+        <span class="tab-label-full">Проценты</span>
+      </button>
+    </nav>
+    <main id="testMain">
+      <section class="tab-panel active" id="panelPrice"></section>
+      <section class="tab-panel" id="panelPercent"></section>
+    </main>
+  </div>
+
+  <script src="../js/calc-core.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/ui-price.js"></script>
+  <script src="../js/ui-percent.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    (function() {
+      if (window.App && window.App.init) {
+        window.App.init();
+      }
+
+      var tests = [];
+      var passed = 0;
+      var failed = 0;
+      var failLog = [];
+
+      function assert(desc, condition, details) {
+        tests.push(desc);
+        if (condition) {
+          passed++;
+        } else {
+          failed++;
+          failLog.push('FAIL: ' + desc + (details ? ' (' + details + ')' : ''));
+        }
+      }
+
+      /* 1. Check tab buttons and icons */
+      var tabPrice = document.getElementById('tabPrice');
+      var tabPercent = document.getElementById('tabPercent');
+      assert('tabPrice exists', !!tabPrice);
+      assert('tabPercent exists', !!tabPercent);
+
+      var priceSvg = tabPrice.querySelector('svg.tab-icon');
+      var percentSvg = tabPercent.querySelector('svg.tab-icon');
+      assert('tabPrice has SVG icon', !!priceSvg);
+      assert('tabPercent has SVG icon', !!percentSvg);
+
+      /* 2. Check tab switching */
+      tabPercent.click();
+      assert('tabPercent selected after click', tabPercent.getAttribute('aria-selected') === 'true');
+      var panelPercent = document.getElementById('panelPercent');
+      assert('panelPercent active after click', panelPercent && panelPercent.classList.contains('active'));
+
+      tabPrice.click();
+      assert('tabPrice selected after click', tabPrice.getAttribute('aria-selected') === 'true');
+      var panelPrice = document.getElementById('panelPrice');
+      assert('panelPrice active after click', panelPrice && panelPrice.classList.contains('active'));
+
+      /* 3. Check Swipe Navigation */
+      var mainEl = document.getElementById('testMain');
+      assert('main element exists for swipe', !!mainEl);
+
+      function createTouchEvent(type, el, x, y) {
+        var evt;
+        try {
+          var touch = new Touch({ identifier: Date.now(), target: el, clientX: x, clientY: y });
+          evt = new TouchEvent(type, { touches: [touch], changedTouches: [touch], bubbles: true });
+        } catch (e) {
+          evt = document.createEvent('Event');
+          evt.initEvent(type, true, true);
+          evt.touches = [{ clientX: x, clientY: y, target: el }];
+          evt.changedTouches = [{ clientX: x, clientY: y, target: el }];
+        }
+        return evt;
+      }
+
+      // Ensure on price tab first
+      tabPrice.click();
+      assert('Starting on price tab', panelPrice.classList.contains('active'));
+
+      // Swipe Left: x: 250 -> 100 (deltaX = -150)
+      mainEl.dispatchEvent(createTouchEvent('touchstart', mainEl, 250, 100));
+      mainEl.dispatchEvent(createTouchEvent('touchend', mainEl, 100, 100));
+
+      assert('Swipe left switched to percent tab', panelPercent.classList.contains('active'));
+      assert('panelPercent has slide-left class', panelPercent.classList.contains('slide-left'));
+
+      // Swipe Right: x: 100 -> 250 (deltaX = +150)
+      mainEl.dispatchEvent(createTouchEvent('touchstart', mainEl, 100, 100));
+      mainEl.dispatchEvent(createTouchEvent('touchend', mainEl, 250, 100));
+
+      assert('Swipe right switched back to price tab', panelPrice.classList.contains('active'));
+      assert('panelPrice has slide-right class', panelPrice.classList.contains('slide-right'));
+
+      /* 4. Output results */
+      var outPre = document.createElement('pre');
+      outPre.id = 'result';
+      var summary = 'TOTAL=' + (passed + failed) + ' PASS=' + passed + ' FAIL=' + failed;
+      if (failLog.length > 0) {
+        summary += '\n' + failLog.join('\n');
+      }
+      outPre.textContent = summary;
+      document.body.appendChild(outPre);
+    })();
+  </script>
+</body>
+</html>

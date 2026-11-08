@@ -33,10 +33,21 @@
         <!-- Navigation Tabs -->
         <nav class="tabs-nav" role="tablist" aria-label="Режимы калькулятора">
             <button type="button" class="tab-btn" role="tab" id="tabPrice" data-tab="price" aria-selected="true" aria-controls="panelPrice" tabindex="0">
-                🛒 Сравнение цен
+                <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                <span class="tab-label-full">Сравнение цен</span>
+                <span class="tab-label-short">Цены</span>
             </button>
             <button type="button" class="tab-btn" role="tab" id="tabPercent" data-tab="percent" aria-selected="false" aria-controls="panelPercent" tabindex="-1">
-                🧮 Проценты
+                <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="19" y1="5" x2="5" y2="19"/>
+                    <circle cx="6.5" cy="6.5" r="2.5"/>
+                    <circle cx="17.5" cy="17.5" r="2.5"/>
+                </svg>
+                <span class="tab-label-full">Проценты</span>
+                <span class="tab-label-short">Проценты</span>
             </button>
         </nav>
 

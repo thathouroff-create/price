@@ -440,7 +440,7 @@
     }
 
     if (resCard && resVal && formulaBox && stepBox) {
-      resVal.style.fontSize = '26px';
+      resVal.style.fontSize = '24px';
       resVal.style.color = 'var(--accent-light)';
       resVal.textContent = result.display;
       formulaBox.textContent = result.formula;

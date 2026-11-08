@@ -4,7 +4,7 @@
  * destination-aware offline fallbacks, and non-disruptive update lifecycle.
  */
 
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 const CACHE_NAME = 'price-v' + APP_VERSION;
 
 const STATIC_ASSETS = [

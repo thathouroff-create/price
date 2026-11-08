@@ -5,6 +5,7 @@
 
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
@@ -298,21 +299,120 @@ body {
 }
 
 @keyframes slideFromRight {
-  from { opacity: 0; transform: translateX(20px); }
+  from { opacity: 0; transform: translateX(24px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes slideFromLeft {
-  from { opacity: 0; transform: translateX(-20px); }
+  from { opacity: 0; transform: translateX(-24px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 .tab-panel.active.slide-left {
-  animation: slideFromRight 0.22s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+  animation: slideFromRight 0.14s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
 }
 
 .tab-panel.active.slide-right {
-  animation: slideFromLeft 0.22s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+  animation: slideFromLeft 0.14s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+/* PWA Install Banner */
+.pwa-install-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(56, 189, 248, 0.1) 100%);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  gap: 8px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.pwa-install-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pwa-install-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.pwa-install-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pwa-install-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.pwa-install-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.pwa-install-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pwa-confirm-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.pwa-confirm-btn:hover {
+  opacity: 0.9;
+}
+
+.pwa-dismiss-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.pwa-dismiss-btn:hover {
+  color: var(--text-primary);
+}
+
+.pill-svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  stroke: var(--text-secondary);
+  transition: stroke 0.2s ease;
+}
+
+.pill-toggle.active .pill-svg {
+  stroke: var(--accent-light);
 }
 
 .bento-card {
@@ -639,12 +739,13 @@ body {
 }
 
 #panelPrice .verdict-title {
-  font-size: 13.5px;
+  font-size: 14px;
+  font-weight: 700;
   margin-bottom: 2px;
 }
 
 #panelPrice .verdict-desc {
-  font-size: 11.5px;
+  font-size: 11px;
 }
 
 #panelPrice .product-card {
@@ -659,6 +760,7 @@ body {
 
 #panelPrice .item-name-input {
   font-size: 14px;
+  font-weight: 600;
   padding: 2px 0;
 }
 
@@ -674,30 +776,38 @@ body {
 }
 
 #panelPrice .input-cell label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   margin-bottom: 3px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 #panelPrice .app-input {
   min-height: 38px;
   height: 38px;
   padding: 6px 10px;
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-#panelPrice .select-unit {
+#panelPrice .select-unit,
+.select-unit {
   min-height: 38px;
   height: 38px;
-  padding: 6px 8px;
-  font-size: 13px;
-  width: 68px;
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 36px;
+  width: 75px;
+  box-sizing: border-box;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 #panelPrice .input-addon {
   right: 10px;
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 #panelPrice .options-strip {
@@ -706,7 +816,7 @@ body {
 }
 
 #panelPrice .pill-toggle {
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-size: 11px;
   min-height: 26px;
 }
@@ -722,12 +832,14 @@ body {
 }
 
 #panelPrice .price-num {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 800;
+  color: var(--accent-light);
 }
 
 #panelPrice .price-unit-tag {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 #panelPrice .badge-best, #panelPrice .badge-diff {
@@ -743,12 +855,12 @@ body {
 #panelPrice .btn-secondary {
   padding: 8px 12px;
   min-height: 38px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 #panelPrice .btn-clear {
   padding: 4px;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 /* Percent App Styles - Mobile Optimized & Compact */
@@ -780,11 +892,11 @@ body {
 }
 
 #pctOpSelect {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   padding: 8px 10px;
-  min-height: 40px;
-  height: 40px;
+  min-height: 38px;
+  height: 38px;
   letter-spacing: -0.01em;
 }
 
@@ -797,21 +909,22 @@ body {
 }
 
 .pct-inputs-grid .app-input {
-  min-height: 40px;
-  height: 40px;
-  padding: 8px 10px;
-  font-size: 16px;
+  min-height: 38px;
+  height: 38px;
+  padding: 6px 10px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .pct-inputs-grid .input-addon {
   right: 10px;
-  font-size: 13px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .pct-operator-chip {
   padding-bottom: 10px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
   text-align: center;
@@ -823,7 +936,7 @@ body {
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   margin-bottom: 4px;
   display: block;
   white-space: normal;
@@ -860,8 +973,8 @@ body {
   padding: 4px 10px;
   min-height: 30px;
   border-radius: var(--radius-pill);
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
@@ -890,12 +1003,49 @@ body {
 }
 
 .percent-result-val {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--accent-light);
   margin-bottom: 4px;
   letter-spacing: -0.02em;
   line-height: 1.15;
+}
+
+.formula-display {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  margin-bottom: 4px;
+  max-width: 100%;
+  overflow-x: auto;
+  word-break: break-all;
+}
+
+.step-explanation {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+.copy-result-btn {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  transition: all 0.2s ease;
 }
 
 .formula-display {

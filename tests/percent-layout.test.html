@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Percent Layout & Clear Verification</title>
+</head>
+<body>
+  <h1>Running Percent Layout Verification...</h1>
+  <div id="test-container" style="width: 375px; margin: 0 auto;"></div>
+
+  <script src="../js/calc-core.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/ui-percent.js"></script>
+  <script>
+    (function() {
+      var tests = [];
+      var passed = 0;
+      var failed = 0;
+      var failLog = [];
+
+      function assert(desc, condition, details) {
+        tests.push(desc);
+        if (condition) {
+          passed++;
+        } else {
+          failed++;
+          failLog.push('FAIL: ' + desc + (details ? ' (' + details + ')' : ''));
+        }
+      }
+
+      var cont = document.getElementById('test-container');
+      var testState = {
+        percent: { op: '1', v1: '', v2: '', round: 2, ndsMode: 1 }
+      };
+      window.UiPercent.init(cont, testState, function(newState) {
+        testState = newState;
+      });
+
+      /* 1. Check Clear Button */
+      var clearBtn = cont.querySelector('.clear-pct-btn');
+      assert('Clear button exists', !!clearBtn);
+      assert('Clear button text is "Очистить"', clearBtn && clearBtn.textContent === 'Очистить');
+
+      // Set some values and calculate
+      var in1 = document.getElementById('pctInput1');
+      var in2 = document.getElementById('pctInput2');
+      assert('Input 1 and Input 2 exist', !!in1 && !!in2);
+
+      in1.value = '25';
+      in2.value = '400';
+      // Simulate input event
+      in1.dispatchEvent(new Event('input'));
+      in2.dispatchEvent(new Event('input'));
+      window.UiPercent.calculate();
+
+      var resCard = document.getElementById('pctResultCard');
+      assert('Result card is visible after calculation', resCard && resCard.classList.contains('visible'));
+      var resVal = document.getElementById('pctResultVal');
+      assert('Result value computed correctly (25% of 400 = 100)', resVal && resVal.textContent === '100');
+
+      // Click clear button
+      clearBtn.click();
+      assert('Input 1 is cleared after clearBtn click', in1.value === '');
+      assert('Input 2 is cleared after clearBtn click', in2.value === '');
+      assert('Result card hidden after clear', resCard && !resCard.classList.contains('visible'));
+
+      /* 2. Check "Что вычислить" select */
+      var opSelect = document.getElementById('pctOpSelect');
+      assert('Operation select exists', !!opSelect);
+      assert('Operation select has 12 options', opSelect && opSelect.options.length === 12);
+
+      for (var i = 0; i < opSelect.options.length; i++) {
+        var opt = opSelect.options[i];
+        assert('Option ' + opt.value + ' title is concise (' + opt.textContent.length + ' chars)', opt.textContent.length <= 28, opt.textContent);
+      }
+
+      /* 3. Check Markup and Margin (Operation 10) for "Себестоимость" label */
+      opSelect.value = '10';
+      opSelect.dispatchEvent(new Event('change'));
+
+      var lbl1 = document.getElementById('pctLabel1');
+      assert('Op 10 Label 1 is Себестоимость', lbl1 && lbl1.textContent === 'Себестоимость');
+
+      var lbl2 = document.getElementById('pctLabel2');
+      assert('Op 10 Label 2 is Наценка', lbl2 && lbl2.textContent === 'Наценка');
+
+      /* 4. Check that container height fits well within mobile screen budget */
+      // Total height of the percent tab cards should be <= 450px
+      var totalH = cont.offsetHeight;
+      assert('Percent tab rendered height is compact (' + totalH + 'px <= 500px)', totalH <= 500, totalH + 'px');
+
+      /* Print results */
+      var outPre = document.createElement('pre');
+      outPre.id = 'result';
+      var summary = 'TOTAL=' + (passed + failed) + ' PASS=' + passed + ' FAIL=' + failed;
+      if (failLog.length > 0) {
+        summary += '\n' + failLog.join('\n');
+      }
+      outPre.textContent = summary;
+      document.body.appendChild(outPre);
+    })();
+  </script>
+</body>
+</html>

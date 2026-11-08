@@ -1,0 +1,640 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>CalcCore Unit & Property Test Suite</title>
+</head>
+<body>
+  <h1>Running CalcCore Test Suite...</h1>
+  <div id="output"></div>
+
+  <script>
+/**
+ * Pure Mathematical & Business Logic Engine for Price & Percent Calculator
+ * Zero DOM, Zero Storage dependencies. Fully testable in any environment.
+ */
+(function(root) {
+  'use strict';
+
+  var CalcCore = {};
+
+  /**
+   * Safely parses user string input into a valid float.
+   * Handles commas, spaces, NBSP, and rejects invalid formats.
+   */
+  CalcCore.parseNum = function(val) {
+    if (val === null || val === undefined) return NaN;
+    if (typeof val === 'number') return isFinite(val) ? val : NaN;
+    var s = String(val).trim().replace(/\u00A0/g, '').replace(/\s+/g, '').replace(',', '.');
+    if (!s || !/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(s)) return NaN;
+    var n = parseFloat(s);
+    return isFinite(n) ? n : NaN;
+  };
+
+  /**
+   * Accurate half-up rounding avoiding IEEE-754 precision artifacts (e.g. 1.005 -> 1.01).
+   */
+  CalcCore.roundHalfUp = function(val, decimals) {
+    var d = typeof decimals === 'number' ? decimals : 2;
+    if (!isFinite(val)) return NaN;
+    var sign = val < 0 ? -1 : 1;
+    var absVal = Math.abs(val);
+    var shifted = Number(absVal + 'e' + d);
+    var rounded = Math.round(shifted);
+    var result = Number(rounded + 'e-' + d);
+    return sign * result;
+  };
+
+  /**
+   * Formats a number with Russian locale rules (comma separator, non-breaking space grouping).
+   */
+  CalcCore.formatNum = function(val, decimals) {
+    if (!isFinite(val)) return 'вЂ”';
+    var d = typeof decimals === 'number' ? decimals : 2;
+    var rounded = CalcCore.roundHalfUp(val, d);
+    return new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: d
+    }).format(rounded);
+  };
+
+  /**
+   * Unit definition table & normalization factors
+   */
+  CalcCore.UNITS = {
+    'g':    { type: 'weight', base: 'kg', mult: 0.001, label: 'Рі', baseLabel: 'РєРі', display: 'в‚Ѕ/РєРі' },
+    'kg':   { type: 'weight', base: 'kg', mult: 1.0,   label: 'РєРі', baseLabel: 'РєРі', display: 'в‚Ѕ/РєРі' },
+    'ml':   { type: 'volume', base: 'l',  mult: 0.001, label: 'РјР»', baseLabel: 'Р»', display: 'в‚Ѕ/Р»' },
+    'l':    { type: 'volume', base: 'l',  mult: 1.0,   label: 'Р»',  baseLabel: 'Р»', display: 'в‚Ѕ/Р»' },
+    'unit': { type: 'count',  base: 'unit', mult: 1.0, label: 'С€С‚', baseLabel: 'С€С‚', display: 'в‚Ѕ/С€С‚' },
+    'pack': { type: 'count',  base: 'unit', mult: 1.0, label: 'СѓРї', baseLabel: 'С€С‚', display: 'в‚Ѕ/С€С‚' }
+  };
+
+  /**
+   * Computes effective price after applying any discounts or promo campaigns.
+   */
+  CalcCore.calcEffectivePrice = function(price, promoType, promoVal) {
+    var p = CalcCore.parseNum(price);
+    if (isNaN(p) || p <= 0) return 0;
+    if (!promoType || promoType === 'none') return p;
+
+    if (promoType === 'percent') {
+      var disc = CalcCore.parseNum(promoVal);
+      if (isNaN(disc) || disc <= 0) return p;
+      if (disc >= 100) return 0;
+      return p * (1 - disc / 100);
+    }
+    if (promoType === 'card') {
+      var cardPrice = CalcCore.parseNum(promoVal);
+      if (isNaN(cardPrice) || cardPrice <= 0) return p;
+      return cardPrice;
+    }
+    if (promoType === 'two_for_one') {
+      // 2 for 1 means 50% discount per unit
+      return p * 0.5;
+    }
+    if (promoType === 'three_for_two') {
+      // 3 for the price of 2 means (2/3) price per unit
+      return p * (2.0 / 3.0);
+    }
+    return p;
+  };
+
+  /**
+   * Computes unit price for a single item normalized to standard base unit (kg, l, or unit).
+   */
+  CalcCore.calcItemUnitPrice = function(item) {
+    var rawPrice = CalcCore.parseNum(item.price);
+    var rawQty = CalcCore.parseNum(item.qty);
+    var packCount = CalcCore.parseNum(item.packCount) || 1;
+    if (packCount <= 0) packCount = 1;
+
+    if (isNaN(rawPrice) || isNaN(rawQty) || rawPrice <= 0 || rawQty <= 0) {
+      return { valid: false, unitPrice: 0, baseUnit: '', display: 'вЂ”' };
+    }
+
+    var unitKey = item.unit || 'unit';
+    var unitMeta = CalcCore.UNITS[unitKey] || CalcCore.UNITS['unit'];
+    var effectivePrice = CalcCore.calcEffectivePrice(rawPrice, item.promoType, item.promoVal);
+    var totalBaseQty = (rawQty * packCount) * unitMeta.mult;
+
+    if (totalBaseQty <= 0) {
+      return { valid: false, unitPrice: 0, baseUnit: unitMeta.base, display: 'вЂ”' };
+    }
+
+    var unitPrice = effectivePrice / totalBaseQty;
+    return {
+      valid: true,
+      unitPrice: unitPrice,
+      effectivePrice: effectivePrice,
+      totalBaseQty: totalBaseQty,
+      unitType: unitMeta.type,
+      baseUnit: unitMeta.base,
+      displayUnit: unitMeta.display,
+      label: unitMeta.label
+    };
+  };
+
+  /**
+   * Compares an array of products, validating unit types and calculating relative difference.
+   */
+  CalcCore.compareProducts = function(items) {
+    if (!items || !items.length) {
+      return { items: [], hasIncompatibleUnits: false, bestDealIdxs: [] };
+    }
+
+    var calculated = items.map(function(item) {
+      return CalcCore.calcItemUnitPrice(item);
+    });
+
+    var validItems = [];
+    calculated.forEach(function(c, idx) {
+      if (c.valid) validItems.push({ idx: idx, res: c });
+    });
+
+    if (!validItems.length) {
+      return { items: calculated, hasIncompatibleUnits: false, bestDealIdxs: [] };
+    }
+
+    // Check unit compatibility (e.g. comparing weight to volume)
+    var firstType = validItems[0].res.unitType;
+    var hasIncompatible = validItems.some(function(v) {
+      return v.res.unitType !== firstType;
+    });
+
+    if (hasIncompatible) {
+      return {
+        items: calculated,
+        hasIncompatibleUnits: true,
+        incompatibleMsg: 'Р’РЅРёРјР°РЅРёРµ: СЃСЂР°РІРЅРёРІР°СЋС‚СЃСЏ СЂР°Р·РЅС‹Рµ РІРµР»РёС‡РёРЅС‹ (РІРµСЃ, РѕР±СЉС‘Рј РёР»Рё С€С‚СѓРєРё)!',
+        bestDealIdxs: []
+      };
+    }
+
+    // Find best deals (minimum unit price)
+    var minPrice = Infinity;
+    validItems.forEach(function(v) {
+      if (v.res.unitPrice < minPrice) {
+        minPrice = v.res.unitPrice;
+      }
+    });
+
+    var bestDealIdxs = [];
+    var tolerance = 1e-9;
+    validItems.forEach(function(v) {
+      if (Math.abs(v.res.unitPrice - minPrice) <= (minPrice * tolerance)) {
+        bestDealIdxs.push(v.idx);
+      }
+    });
+
+    // Compute relative worse percentage & savings
+    calculated.forEach(function(c, idx) {
+      if (!c.valid || minPrice === Infinity) return;
+      if (bestDealIdxs.indexOf(idx) !== -1) {
+        c.isBest = true;
+        c.diffPercent = 0;
+      } else {
+        c.isBest = false;
+        c.diffPercent = CalcCore.roundHalfUp(((c.unitPrice - minPrice) / minPrice) * 100, 1);
+        c.savingPerBase = CalcCore.roundHalfUp(c.unitPrice - minPrice, 2);
+      }
+    });
+
+    var isExactTie = bestDealIdxs.length > 1 && bestDealIdxs.length === validItems.length;
+
+    return {
+      items: calculated,
+      hasIncompatibleUnits: false,
+      bestDealIdxs: bestDealIdxs,
+      isExactTie: isExactTie,
+      minUnitPrice: minPrice,
+      validCount: validItems.length
+    };
+  };
+
+  /**
+   * Percent Operations (12 Operations with Step-by-Step Explanations)
+   */
+  CalcCore.PERCENT_OPERATIONS = {
+    '1': {
+      title: 'РќР°Р№С‚Рё РїСЂРѕС†РµРЅС‚ РѕС‚ С‡РёСЃР»Р°',
+      p1: 'РџСЂРѕС†РµРЅС‚ (%)',
+      p2: 'Р§РёСЃР»Рѕ',
+      sep: '% РѕС‚',
+      end: '',
+      calc: function(v1, v2) {
+        var r = (v1 / 100) * v2;
+        return {
+          res: r,
+          display: CalcCore.formatNum(r, 2),
+          formula: '(' + v1 + ' / 100) Г— ' + v2 + ' = ' + CalcCore.formatNum(r, 2),
+          step: 'Р”РµР»РёРј РїСЂРѕС†РµРЅС‚ ' + v1 + ' РЅР° 100 Рё СѓРјРЅРѕР¶Р°РµРј РЅР° С‡РёСЃР»Рѕ ' + v2
+        };
+      }
+    },
+    '2': {
+      title: 'РЎРєРѕР»СЊРєРѕ РїСЂРѕС†РµРЅС‚РѕРІ СЃРѕСЃС‚Р°РІР»СЏРµС‚ С‡РёСЃР»Рѕ РѕС‚ С‡РёСЃР»Р°',
+      p1: 'Р§РёСЃР»Рѕ 1',
+      p2: 'Р§РёСЃР»Рѕ 2',
+      sep: 'РѕС‚',
+      end: '',
+      calc: function(v1, v2) {
+        if (v2 === 0) return { error: 'Р”РµР»РµРЅРёРµ РЅР° РЅРѕР»СЊ РЅРµРІРѕР·РјРѕР¶РЅРѕ (РІС‚РѕСЂРѕРµ С‡РёСЃР»Рѕ = 0)' };
+        var r = (v1 / v2) * 100;
+        return {
+          res: r,
+          display: CalcCore.formatNum(r, 2) + '%',
+          formula: '(' + v1 + ' / ' + v2 + ') Г— 100% = ' + CalcCore.formatNum(r, 2) + '%',
+          step: 'Р”РµР»РёРј ' + v1 + ' РЅР° ' + v2 + ' Рё РїРµСЂРµРІРѕРґРёРј РІ РїСЂРѕС†РµРЅС‚С‹'
+        };
+      }
+    },
+    '3': {
+      title: 'РџСЂРёР±Р°РІРёС‚СЊ РїСЂРѕС†РµРЅС‚ Рє С‡РёСЃР»Сѓ',
+      p1: 'Р§РёСЃР»Рѕ',
+      p2: 'РџСЂРѕС†РµРЅС‚ (%)',
+      sep: '+',
+      end: '%',
+      calc: function(v1, v2) {
+        var delta = (v1 * v2) / 100;
+        var r = v1 + delta;
+        return {
+          res: r,
+          display: CalcCore.formatNum(r, 2),
+          formula: v1 + ' + (' + v1 + ' Г— ' + v2 + '%) = ' + CalcCore.formatNum(r, 2),
+          step: 'РџСЂРёР±Р°РІРєР° СЃРѕСЃС‚Р°РІР»СЏРµС‚ ' + CalcCore.formatNum(delta, 2) + ' (РёС‚РѕРіРѕ ' + CalcCore.formatNum(r, 2) + ')'
+        };
+      }
+    },
+    '4': {
+      title: 'Р’С‹С‡РµСЃС‚СЊ РїСЂРѕС†РµРЅС‚ РёР· С‡РёСЃР»Р°',
+      p1: 'Р§РёСЃР»Рѕ',
+      p2: 'РџСЂРѕС†РµРЅС‚ (%)',
+      sep: 'в€’',
+      end: '%',
+      calc: function(v1, v2) {
+        var delta = (v1 * v2) / 100;
+        var r = v1 - delta;
+        return {
+          res: r,
+          display: CalcCore.formatNum(r, 2),
+          formula: v1 + ' в€’ (' + v1 + ' Г— ' + v2 + '%) = ' + CalcCore.formatNum(r, 2),
+          step: 'РЎРєРёРґРєР° СЃРѕСЃС‚Р°РІР»СЏРµС‚ ' + CalcCore.formatNum(delta, 2) + ' (РѕСЃС‚Р°С‘С‚СЃСЏ ' + CalcCore.formatNum(r, 2) + ')'
+        };
+      }
+    },
+    '5': {
+      title: 'РќР° СЃРєРѕР»СЊРєРѕ % РѕРґРЅРѕ С‡РёСЃР»Рѕ Р±РѕР»СЊС€Рµ РґСЂСѓРіРѕРіРѕ',
+      p1: 'Р§РёСЃР»Рѕ 1',
+      p2: 'Р§РёСЃР»Рѕ 2',
+      sep: 'Р±РѕР»СЊС€Рµ С‡РµРј',
+      end: '',
+      calc: function(v1, v2) {
+        if (v2 === 0) return { error: 'Р”РµР»РµРЅРёРµ РЅР° РЅРѕР»СЊ РЅРµРІРѕР·РјРѕР¶РЅРѕ (РІС‚РѕСЂРѕРµ С‡РёСЃР»Рѕ = 0)' };
+        var r = ((v1 - v2) / v2) * 100;
+        return {
+          res: r,
+          display: (r > 0 ? '+' : '') + CalcCore.formatNum(r, 2) + '%',
+          formula: '((' + v1 + ' в€’ ' + v2 + ') / ' + v2 + ') Г— 100% = ' + CalcCore.formatNum(r, 2) + '%',
+          step: 'Р Р°Р·РЅРёС†Р° (' + (v1 - v2) + ') РґРµР»РёС‚СЃСЏ РЅР° Р±Р°Р·Сѓ ' + v2
+        };
+      }
+    },
+    '6': {
+      title: 'РќР° СЃРєРѕР»СЊРєРѕ % РѕРґРЅРѕ С‡РёСЃР»Рѕ РјРµРЅСЊС€Рµ РґСЂСѓРіРѕРіРѕ',
+      p1: 'Р§РёСЃР»Рѕ 1',
+      p2: 'Р§РёСЃР»Рѕ 2',
+      sep: 'РјРµРЅСЊС€Рµ С‡РµРј',
+      end: '',
+      calc: function(v1, v2) {
+        if (v2 === 0) return { error: 'Р”РµР»РµРЅРёРµ РЅР° РЅРѕР»СЊ РЅРµРІРѕР·РјРѕР¶РЅРѕ (РІС‚РѕСЂРѕРµ С‡РёСЃР»Рѕ = 0)' };
+        var r = ((v2 - v1) / v2) * 100;
+        return {
+          res: r,
+          display: CalcCore.formatNum(r, 2) + '%',
+          formula: '((' + v2 + ' в€’ ' + v1 + ') / ' + v2 + ') Г— 100% = ' + CalcCore.formatNum(r, 2) + '%',
+          step: 'РЈРјРµРЅСЊС€РµРЅРёРµ РѕС‚ ' + v2 + ' РґРѕ ' + v1
+        };
+      }
+    },
+    '7': {
+      title: 'РќР°Р№С‚Рё 100 РїСЂРѕС†РµРЅС‚РѕРІ (РїРѕ РёР·РІРµСЃС‚РЅРѕР№ РґРѕР»Рµ)',
+      p1: 'Р§РёСЃР»Рѕ',
+      p2: 'РџСЂРѕС†РµРЅС‚ (%)',
+      sep: 'СЌС‚Рѕ',
+      end: '%',
+      calc: function(v1, v2) {
+        if (v2 === 0) return { error: 'РџСЂРѕС†РµРЅС‚ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРµРЅ 0' };
+        var r = (v1 / v2) * 100;
+        return {
+          res: r,
+          display: CalcCore.formatNum(r, 2),
+          formula: '(' + v1 + ' / ' + v2 + ') Г— 100 = ' + CalcCore.formatNum(r, 2),
+          step: 'Р•СЃР»Рё ' + v1 + ' СЃРѕСЃС‚Р°РІР»СЏРµС‚ ' + v2 + '%, С‚Рѕ 100% СЂР°РІРЅРѕ ' + CalcCore.formatNum(r, 2)
+        };
+      }
+    },
+    '8': {
+      title: 'РџСЂРѕС†РµРЅС‚РЅРѕРµ РёР·РјРµРЅРµРЅРёРµ С‡РёСЃР»Р° (Р±С‹Р»Рѕ в†’ СЃС‚Р°Р»Рѕ)',
+      p1: 'Р‘С‹Р»Рѕ',
+      p2: 'РЎС‚Р°Р»Рѕ',
+      sep: 'в†’',
+      end: '',
+      calc: function(v1, v2) {
+        if (v1 === 0) return { error: 'РќР°С‡Р°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ СЂР°РІРЅРѕ 0' };
+        var r = ((v2 - v1) / Math.abs(v1)) * 100;
+        var prefix = r > 0 ? '+' : '';
+        return {
+          res: r,
+          display: prefix + CalcCore.formatNum(r, 2) + '%',
+          formula: '((' + v2 + ' в€’ ' + v1 + ') / |' + v1 + '|) Г— 100% = ' + prefix + CalcCore.formatNum(r, 2) + '%',
+          step: r >= 0 ? 'Р РѕСЃС‚ РЅР° ' + CalcCore.formatNum(r, 2) + '%' : 'РџР°РґРµРЅРёРµ РЅР° ' + CalcCore.formatNum(Math.abs(r), 2) + '%'
+        };
+      }
+    },
+    '9': {
+      title: 'РќР”РЎ 20% (РІС‹РґРµР»РёС‚СЊ РёР»Рё РЅР°С‡РёСЃР»РёС‚СЊ)',
+      p1: 'РЎСѓРјРјР° (в‚Ѕ)',
+      p2: 'Р РµР¶РёРј',
+      sep: 'СЂР°СЃС‡С‘С‚',
+      end: '',
+      isCustomMode: true,
+      calc: function(sum, mode) {
+        // mode: 1 = РІС‹РґРµР»РёС‚СЊ РќР”РЎ (СЃСѓРјРјР° РІРєР»СЋС‡Р°РµС‚ РќР”РЎ), 2 = РЅР°С‡РёСЃР»РёС‚СЊ РќР”РЎ (СЃСѓРјРјР° Р±РµР· РќР”РЎ)
+        if (mode === 2) {
+          var ndsAdd = sum * 0.20;
+          var totalAdd = sum + ndsAdd;
+          return {
+            res: totalAdd,
+            display: CalcCore.formatNum(totalAdd, 2) + ' в‚Ѕ',
+            formula: 'РќР”РЎ 20%: ' + CalcCore.formatNum(ndsAdd, 2) + ' в‚Ѕ | РС‚РѕРіРѕ СЃ РќР”РЎ: ' + CalcCore.formatNum(totalAdd, 2) + ' в‚Ѕ',
+            step: 'РќР°С‡РёСЃР»РµРЅРѕ 20% РќР”РЎ (' + CalcCore.formatNum(ndsAdd, 2) + ' в‚Ѕ) Рє Р±Р°Р·Рµ ' + CalcCore.formatNum(sum, 2) + ' в‚Ѕ'
+          };
+        } else {
+          var base = sum / 1.20;
+          var ndsExt = sum - base;
+          return {
+            res: ndsExt,
+            display: CalcCore.formatNum(ndsExt, 2) + ' в‚Ѕ',
+            formula: 'РќР”РЎ 20%: ' + CalcCore.formatNum(ndsExt, 2) + ' в‚Ѕ | Р‘РµР· РќР”РЎ: ' + CalcCore.formatNum(base, 2) + ' в‚Ѕ',
+            step: 'Р’ СЃСѓРјРјРµ ' + CalcCore.formatNum(sum, 2) + ' в‚Ѕ Р·Р°Р»РѕР¶РµРЅРѕ ' + CalcCore.formatNum(ndsExt, 2) + ' в‚Ѕ РќР”РЎ'
+          };
+        }
+      }
+    },
+    '10': {
+      title: 'РќР°С†РµРЅРєР° Рё РјР°СЂР¶Р°',
+      p1: 'РЎРµР±РµСЃС‚РѕРёРјРѕСЃС‚СЊ (в‚Ѕ)',
+      p2: 'РќР°С†РµРЅРєР° (%)',
+      sep: 'СЃ РЅР°С†РµРЅРєРѕР№',
+      end: '%',
+      calc: function(cost, markup) {
+        if (cost < 0) return { error: 'РЎРµР±РµСЃС‚РѕРёРјРѕСЃС‚СЊ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РѕС‚СЂРёС†Р°С‚РµР»СЊРЅРѕР№' };
+        var price = cost * (1 + markup / 100);
+        var profit = price - cost;
+        var margin = price > 0 ? (profit / price) * 100 : 0;
+        return {
+          res: price,
+          display: CalcCore.formatNum(price, 2) + ' в‚Ѕ',
+          formula: 'Р¦РµРЅР° РїСЂРѕРґР°Р¶Рё: ' + CalcCore.formatNum(price, 2) + ' в‚Ѕ | РњР°СЂР¶Р°: ' + CalcCore.formatNum(margin, 1) + '%',
+          step: 'РџСЂРёР±С‹Р»СЊ СЃ РµРґРёРЅРёС†С‹: ' + CalcCore.formatNum(profit, 2) + ' в‚Ѕ (РјР°СЂР¶РёРЅР°Р»СЊРЅРѕСЃС‚СЊ ' + CalcCore.formatNum(margin, 1) + '%)'
+        };
+      }
+    },
+    '11': {
+      title: 'РЎР»РѕР¶РЅС‹Р№ РїСЂРѕС†РµРЅС‚ (РґРµРїРѕР·РёС‚ / РІРєР»Р°Рґ)',
+      p1: 'РЎСѓРјРјР° (в‚Ѕ)',
+      p2: 'РЎС‚Р°РІРєР° (% РіРѕРґ)',
+      sep: 'РїРѕРґ',
+      end: '%',
+      calc: function(principal, rate, months) {
+        var m = months || 12;
+        var monthlyRate = (rate / 100) / 12;
+        var total = principal * Math.pow(1 + monthlyRate, m);
+        var interest = total - principal;
+        return {
+          res: total,
+          display: CalcCore.formatNum(total, 2) + ' в‚Ѕ',
+          formula: 'Р”РѕС…РѕРґ: +' + CalcCore.formatNum(interest, 2) + ' в‚Ѕ | РС‚РѕРі С‡РµСЂРµР· ' + m + ' РјРµСЃ: ' + CalcCore.formatNum(total, 2) + ' в‚Ѕ',
+          step: 'РљР°РїРёС‚Р°Р»РёР·Р°С†РёСЏ РµР¶РµРјРµСЃСЏС‡РЅРѕ РїРѕРґ ' + rate + '% РіРѕРґРѕРІС‹С… Р·Р° ' + m + ' РјРµСЃ.'
+        };
+      }
+    },
+    '12': {
+      title: 'Р Р°СЃС‡С‘С‚ СЃРєРёРґРєРё (СЃС‚Р°СЂР°СЏ Рё РЅРѕРІР°СЏ С†РµРЅР°)',
+      p1: 'РЎС‚Р°СЂР°СЏ С†РµРЅР°',
+      p2: 'РќРѕРІР°СЏ С†РµРЅР°',
+      sep: 'в†’ СЃРѕ СЃРєРёРґРєРѕР№',
+      end: '',
+      calc: function(oldPrice, newPrice) {
+        if (oldPrice <= 0) return { error: 'РЎС‚Р°СЂР°СЏ С†РµРЅР° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ РЅСѓР»СЏ' };
+        var diff = oldPrice - newPrice;
+        var pct = (diff / oldPrice) * 100;
+        return {
+          res: diff,
+          display: 'РЎРєРёРґРєР° ' + CalcCore.formatNum(pct, 1) + '%',
+          formula: 'Р­РєРѕРЅРѕРјРёСЏ: ' + CalcCore.formatNum(diff, 2) + ' в‚Ѕ (СЃРєРёРґРєР° ' + CalcCore.formatNum(pct, 1) + '%)',
+          step: 'Р’С‹ СЌРєРѕРЅРѕРјРёС‚Рµ ' + CalcCore.formatNum(diff, 2) + ' в‚Ѕ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РёСЃС…РѕРґРЅРѕР№ С†РµРЅС‹'
+        };
+      }
+    }
+  };
+
+  /**
+   * Helper to execute a percent operation by ID with arguments
+   */
+  CalcCore.calcPercent = function(opId, v1Str, v2Str, roundDecimals, opt3) {
+    var op = CalcCore.PERCENT_OPERATIONS[String(opId)];
+    if (!op) return { error: 'РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕРїРµСЂР°С†РёСЏ' };
+
+    var v1 = CalcCore.parseNum(v1Str);
+    var v2 = CalcCore.parseNum(v2Str);
+    if (isNaN(v1) || isNaN(v2)) {
+      return { error: 'РџРѕР¶Р°Р»СѓР№СЃС‚Р°, РІРІРµРґРёС‚Рµ РєРѕСЂСЂРµРєС‚РЅС‹Рµ С‡РёСЃР»РѕРІС‹Рµ Р·РЅР°С‡РµРЅРёСЏ' };
+    }
+
+    var result = op.calc(v1, v2, opt3);
+    if (result.error) return result;
+
+    var decimals = typeof roundDecimals === 'number' ? roundDecimals : 2;
+    if (typeof result.res === 'number') {
+      result.rounded = CalcCore.roundHalfUp(result.res, decimals);
+    }
+    return result;
+  };
+
+  root.CalcCore = CalcCore;
+
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+  <script>
+    (function() {
+      var tests = [];
+      var passed = 0;
+      var failed = 0;
+      var failLog = [];
+
+      function assert(desc, condition, details) {
+        tests.push(desc);
+        if (condition) {
+          passed++;
+        } else {
+          failed++;
+          failLog.push('FAIL: ' + desc + (details ? ' (' + details + ')' : ''));
+        }
+      }
+
+      var C = window.CalcCore;
+      if (!C) {
+        document.body.innerHTML = '<pre id="result">TOTAL=1 PASS=0 FAIL=1\nFAIL: CalcCore not loaded</pre>';
+        return;
+      }
+
+      /* 1. parseNum */
+      assert('parseNum valid integer', C.parseNum('42') === 42);
+      assert('parseNum with comma', C.parseNum('12,5') === 12.5);
+      assert('parseNum with space grouping', C.parseNum('1 000,5') === 1000.5);
+      assert('parseNum with NBSP', C.parseNum('2\u00A0500,75') === 2500.75);
+      assert('parseNum invalid string returns NaN', isNaN(C.parseNum('12abc')));
+      assert('parseNum empty string returns NaN', isNaN(C.parseNum('')));
+      assert('parseNum single comma returns NaN', isNaN(C.parseNum(',')));
+      assert('parseNum number input', C.parseNum(89.9) === 89.9);
+
+      /* 2. roundHalfUp */
+      assert('roundHalfUp 1.005 -> 1.01', C.roundHalfUp(1.005, 2) === 1.01);
+      assert('roundHalfUp 2.675 -> 2.68', C.roundHalfUp(2.675, 2) === 2.68);
+      assert('roundHalfUp negative -1.005 -> -1.01', C.roundHalfUp(-1.005, 2) === -1.01);
+      assert('roundHalfUp 0 decimals', C.roundHalfUp(14.6, 0) === 15);
+      assert('roundHalfUp 4 decimals', C.roundHalfUp(1.23456, 4) === 1.2346);
+
+      /* 3. formatNum */
+      assert('formatNum valid number', C.formatNum(1000.5, 2).replace(/\s/g, '').replace(',', '.') === '1000.5');
+      assert('formatNum NaN returns dash', C.formatNum(NaN) === 'вЂ”');
+
+      /* 4. Unit pricing & conversions */
+      var itemG = { price: '89,9', qty: '450', unit: 'g', packCount: 1, promoType: 'none' };
+      var resG = C.calcItemUnitPrice(itemG);
+      assert('unitPrice for 450g at 89.9', C.roundHalfUp(resG.unitPrice, 2) === 199.78);
+      assert('displayUnit is в‚Ѕ/РєРі', resG.displayUnit === 'в‚Ѕ/РєРі');
+
+      var itemL = { price: '120', qty: '1.5', unit: 'l', packCount: 1, promoType: 'none' };
+      var resL = C.calcItemUnitPrice(itemL);
+      assert('unitPrice for 1.5L at 120', C.roundHalfUp(resL.unitPrice, 2) === 80);
+
+      /* 5. Promos & Multipacks */
+      var itemPromoDisc = { price: '100', qty: '1', unit: 'kg', packCount: 1, promoType: 'percent', promoVal: '20' };
+      var resPromoDisc = C.calcItemUnitPrice(itemPromoDisc);
+      assert('promo 20% discount on 100', resPromoDisc.unitPrice === 80);
+
+      var itemCard = { price: '100', qty: '1', unit: 'kg', packCount: 1, promoType: 'card', promoVal: '79' };
+      var resCard = C.calcItemUnitPrice(itemCard);
+      assert('promo card price 79', resCard.unitPrice === 79);
+
+      var item2For1 = { price: '100', qty: '1', unit: 'kg', packCount: 1, promoType: 'two_for_one' };
+      var res2For1 = C.calcItemUnitPrice(item2For1);
+      assert('promo 2 for 1 is 50%', res2For1.unitPrice === 50);
+
+      var itemMultipack = { price: '300', qty: '0.5', unit: 'l', packCount: 6, promoType: 'none' };
+      var resMultipack = C.calcItemUnitPrice(itemMultipack);
+      assert('multipack 6 x 0.5L = 3L at 300 -> 100/L', resMultipack.unitPrice === 100);
+
+      /* 6. Product comparison & ties */
+      var p1 = { price: '100', qty: '1', unit: 'kg', packCount: 1, promoType: 'none' };
+      var p2 = { price: '150', qty: '1', unit: 'kg', packCount: 1, promoType: 'none' };
+      var comp1 = C.compareProducts([p1, p2]);
+      assert('compare detects p1 as best', comp1.bestDealIdxs.length === 1 && comp1.bestDealIdxs[0] === 0);
+      assert('compare p2 diff percent is +50%', comp1.items[1].diffPercent === 50);
+
+      // Exact tie
+      var pTie1 = { price: '100', qty: '1', unit: 'kg', packCount: 1, promoType: 'none' };
+      var pTie2 = { price: '200', qty: '2', unit: 'kg', packCount: 1, promoType: 'none' };
+      var compTie = C.compareProducts([pTie1, pTie2]);
+      assert('compare detects exact tie', compTie.isExactTie === true && compTie.bestDealIdxs.length === 2);
+
+      // Incompatible units (weight vs volume)
+      var pMix1 = { price: '100', qty: '1', unit: 'kg', packCount: 1, promoType: 'none' };
+      var pMix2 = { price: '100', qty: '1', unit: 'l', packCount: 1, promoType: 'none' };
+      var compMix = C.compareProducts([pMix1, pMix2]);
+      assert('compare detects incompatible units', compMix.hasIncompatibleUnits === true);
+
+      /* 7. Percent Operations (Op 1 to 12) */
+      // Op 1: 15% of 200 = 30
+      var op1 = C.calcPercent('1', '15', '200');
+      assert('op1 15% of 200 = 30', op1.res === 30);
+
+      // Op 2: 30 of 200 = 15%
+      var op2 = C.calcPercent('2', '30', '200');
+      assert('op2 30 of 200 = 15%', op2.res === 15);
+      var op2Zero = C.calcPercent('2', '30', '0');
+      assert('op2 division by 0 handled', !!op2Zero.error);
+
+      // Op 3: 200 + 15% = 230
+      var op3 = C.calcPercent('3', '200', '15');
+      assert('op3 200 + 15% = 230', op3.res === 230);
+
+      // Op 4: 200 - 15% = 170
+      var op4 = C.calcPercent('4', '200', '15');
+      assert('op4 200 - 15% = 170', op4.res === 170);
+
+      // Op 5: 230 is 15% greater than 200
+      var op5 = C.calcPercent('5', '230', '200');
+      assert('op5 230 > 200 is 15%', C.roundHalfUp(op5.res, 2) === 15);
+      assert('op5 div by 0 handled', !!C.calcPercent('5', '230', '0').error);
+
+      // Op 6: 170 is 15% less than 200
+      var op6 = C.calcPercent('6', '170', '200');
+      assert('op6 170 < 200 is 15%', C.roundHalfUp(op6.res, 2) === 15);
+
+      // Op 7: 30 is 15%, find 100% -> 200
+      var op7 = C.calcPercent('7', '30', '15');
+      assert('op7 30 is 15% -> 200', op7.res === 200);
+
+      // Op 8: change from 200 to 150 = -25%
+      var op8 = C.calcPercent('8', '200', '150');
+      assert('op8 200 -> 150 is -25%', op8.res === -25);
+      assert('op8 base 0 handled', !!C.calcPercent('8', '0', '150').error);
+
+      // Op 9: NDS 20%
+      var op9Extract = C.PERCENT_OPERATIONS['9'].calc(120, 1);
+      assert('op9 extract NDS from 120 is 20', C.roundHalfUp(op9Extract.res, 2) === 20);
+      var op9Add = C.PERCENT_OPERATIONS['9'].calc(100, 2);
+      assert('op9 add NDS to 100 is 120', C.roundHalfUp(op9Add.res, 2) === 120);
+
+      // Op 10: Markup and Margin (Cost 100, markup 25% -> price 125, margin 20%)
+      var op10 = C.PERCENT_OPERATIONS['10'].calc(100, 25);
+      assert('op10 cost 100 markup 25% -> 125', op10.res === 125);
+
+      // Op 11: Compound interest (1000 at 12% for 12 months)
+      var op11 = C.PERCENT_OPERATIONS['11'].calc(1000, 12, 12);
+      assert('op11 compound interest works', op11.res > 1120);
+
+      // Op 12: Discount (old 200, new 150 -> saving 50, discount 25%)
+      var op12 = C.PERCENT_OPERATIONS['12'].calc(200, 150);
+      assert('op12 discount 200 -> 150 is 50 saving', op12.res === 50);
+
+      /* 8. Property-based checks (inverse operations) */
+      for (var k = 1; k <= 20; k++) {
+        var baseVal = 100 + k * 17.5;
+        var pctVal = 5 + (k % 40);
+        // op1 and op7 inverse relation
+        var part = (pctVal / 100) * baseVal;
+        var full = C.calcPercent('7', String(part), String(pctVal)).res;
+        assert('property: op1 and op7 inverse (iter ' + k + ')', Math.abs(full - baseVal) < 1e-6);
+      }
+
+      /* Print results */
+      var outPre = document.createElement('pre');
+      outPre.id = 'result';
+      var summary = 'TOTAL=' + (passed + failed) + ' PASS=' + passed + ' FAIL=' + failed;
+      if (failLog.length > 0) {
+        summary += '\n' + failLog.join('\n');
+      }
+      outPre.textContent = summary;
+      document.body.appendChild(outPre);
+    })();
+  </script>
+</body>
+</html>
+
+

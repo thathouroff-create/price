@@ -1,0 +1,35 @@
+name: Deploy Price Calculator
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Stage clean frontend bundle
+        run: |
+          mkdir -p .dist/css .dist/js .dist/icons
+          cp index.html manifest.json sw.js .dist/
+          cp -r css/* .dist/css/
+          cp -r js/* .dist/js/
+          cp -r icons/* .dist/icons/
+          [ -f icon.png ] && cp icon.png .dist/
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: .dist
+          branch: gh-pages

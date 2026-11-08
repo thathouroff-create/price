@@ -1,8 +1,8 @@
 {
-  "id": "calculators-pwa",
-  "name": "Калькуляторы",
-  "short_name": "Кальк",
-  "description": "Сравнение выгодности цен на товары с учётом скидок и акций, и универсальный калькулятор процентов",
+  "id": "calc-plus-pwa",
+  "name": "Calc+",
+  "short_name": "Calc+",
+  "description": "Calc+: умный калькулятор выгодных цен и универсальный калькулятор процентов",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -322,7 +322,6 @@
     var selectUnit = document.createElement('select');
     selectUnit.className = 'app-select select-unit';
     selectUnit.style.width = '75px';
-    selectUnit.style.padding = '12px 6px';
     UNITS.forEach(function(u) {
       var opt = document.createElement('option');
       opt.value = u.key;
@@ -336,20 +335,20 @@
 
     card.appendChild(grid);
 
-    // Option Pills (Multipack, Promo)
+    // Option Pills (Multipack, Promo with Vector SVG Icons)
     var optionsStrip = document.createElement('div');
     optionsStrip.className = 'options-strip';
 
     var btnPack = document.createElement('button');
     btnPack.type = 'button';
     btnPack.className = 'pill-toggle toggle-pack' + (p.packCount > 1 ? ' active' : '');
-    btnPack.textContent = '📦 Упаковка (' + (p.packCount || 1) + ' шт)';
+    btnPack.innerHTML = '<svg class="pill-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg><span>Упаковка (' + (p.packCount || 1) + ' шт)</span>';
     optionsStrip.appendChild(btnPack);
 
     var btnPromo = document.createElement('button');
     btnPromo.type = 'button';
     btnPromo.className = 'pill-toggle toggle-promo' + (p.promoType !== 'none' ? ' active' : '');
-    btnPromo.textContent = '🏷️ Скидка/акция';
+    btnPromo.innerHTML = '<svg class="pill-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg><span>Скидка/акция</span>';
     optionsStrip.appendChild(btnPromo);
 
     card.appendChild(optionsStrip);

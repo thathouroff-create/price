@@ -30,6 +30,7 @@
     // 3. Initialize Tabs & Touch Swipe
     setupTabs();
     setupSwipe();
+    setupInstallPrompt();
 
     // 5. Initialize Sub-modules
     var pricePanel = document.getElementById('panelPrice');
@@ -91,19 +92,17 @@
   }
 
   function setupSwipe() {
-    var mainEl = document.querySelector('main');
-    if (!mainEl) return;
-
     var startX = 0;
     var startY = 0;
     var startTime = 0;
     var isSwiping = false;
 
-    mainEl.addEventListener('touchstart', function(e) {
+    // Fullscreen swipe across entire document body
+    document.addEventListener('touchstart', function(e) {
       if (e.touches.length !== 1) return;
       var target = e.target;
       // Ignore swipe when user interacts with inputs, selects, buttons or interactive controls
-      if (target.closest('input, select, textarea, button, .pill-toggle, .delete-card-btn, .swap-btn, .clear-pct-btn')) {
+      if (target.closest('input, select, textarea, button, .pill-toggle, .delete-card-btn, .swap-btn, .clear-pct-btn, .pwa-dismiss-btn, .pwa-confirm-btn')) {
         isSwiping = false;
         return;
       }
@@ -113,7 +112,7 @@
       startTime = Date.now();
     }, { passive: true });
 
-    mainEl.addEventListener('touchend', function(e) {
+    document.addEventListener('touchend', function(e) {
       if (!isSwiping || e.changedTouches.length !== 1) return;
       isSwiping = false;
 
@@ -123,8 +122,8 @@
       var deltaY = endY - startY;
       var elapsed = Date.now() - startTime;
 
-      // Minimum swipe distance 45px, mostly horizontal (deltaX > 1.35 * deltaY), within 500ms
-      if (Math.abs(deltaX) >= 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.35 && elapsed <= 500) {
+      // Ultra-sensitive & fast gesture: min 24px, deltaX > deltaY * 1.05, within 600ms
+      if (Math.abs(deltaX) >= 24 && Math.abs(deltaX) > Math.abs(deltaY) * 1.05 && elapsed <= 600) {
         if (deltaX < 0) {
           // Swipe Left: price -> percent
           if (state.tab === 'price') {
@@ -139,9 +138,94 @@
       }
     }, { passive: true });
 
-    mainEl.addEventListener('touchcancel', function() {
+    document.addEventListener('touchcancel', function() {
       isSwiping = false;
     }, { passive: true });
+  }
+
+  /* --- PWA Install to Home Screen --- */
+  var deferredInstallPrompt = null;
+
+  function setupInstallPrompt() {
+    var installBtn = document.getElementById('installAppBtn');
+    var installBanner = document.getElementById('pwaInstallBanner');
+    var confirmBtn = document.getElementById('pwaInstallConfirm');
+    var dismissBtn = document.getElementById('pwaInstallDismiss');
+
+    var isDismissed = false;
+    try {
+      isDismissed = localStorage.getItem('calc_install_dismissed') === '1';
+    } catch (e) {}
+
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isStandalone) {
+      if (installBtn) installBtn.style.display = 'none';
+      if (installBanner) installBanner.style.display = 'none';
+      return;
+    }
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+
+      if (installBtn) {
+        installBtn.style.display = 'inline-flex';
+      }
+
+      if (installBanner && !isDismissed) {
+        installBanner.style.display = 'flex';
+      }
+    });
+
+    var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIos && !isStandalone) {
+      if (installBtn) {
+        installBtn.style.display = 'inline-flex';
+      }
+      if (installBanner && !isDismissed) {
+        installBanner.style.display = 'flex';
+        var desc = installBanner.querySelector('.pwa-install-desc');
+        if (desc) desc.textContent = 'Нажмите «Поделиться» ⎋ и «На экран Домой» ➕';
+      }
+    }
+
+    function triggerInstall() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(function(choice) {
+          if (choice.outcome === 'accepted') {
+            if (installBtn) installBtn.style.display = 'none';
+            if (installBanner) installBanner.style.display = 'none';
+          }
+          deferredInstallPrompt = null;
+        });
+      } else if (isIos) {
+        alert('Чтобы добавить Calc+ на экран:\n1. Нажмите иконку «Поделиться» (⎋) внизу экрана Safari.\n2. Выберите пункт «На экран „Домой“» ➕.');
+      } else {
+        alert('Для установки используйте меню браузера (⋮) → «Установить приложение» или «Добавить на главный экран».');
+      }
+    }
+
+    if (installBtn) {
+      installBtn.addEventListener('click', triggerInstall);
+    }
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', triggerInstall);
+    }
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', function() {
+        if (installBanner) installBanner.style.display = 'none';
+        try {
+          localStorage.setItem('calc_install_dismissed', '1');
+        } catch (e) {}
+      });
+    }
+
+    window.addEventListener('appinstalled', function() {
+      if (installBtn) installBtn.style.display = 'none';
+      if (installBanner) installBanner.style.display = 'none';
+      deferredInstallPrompt = null;
+    });
   }
 
   function switchTab(tabKey, direction) {

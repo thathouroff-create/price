@@ -12,18 +12,41 @@
     <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
     <link rel="manifest" href="./manifest.json">
-    <title>Калькуляторы</title>
+    <title>Calc+</title>
     <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
     <div class="app-container">
+        <!-- PWA Install Banner -->
+        <aside id="pwaInstallBanner" class="pwa-install-banner" style="display: none;" aria-label="Предложение установки">
+            <div class="pwa-install-info">
+                <img src="./icons/icon.svg" alt="" class="pwa-install-icon" width="32" height="32">
+                <div class="pwa-install-text">
+                    <strong class="pwa-install-title">Установить Calc+</strong>
+                    <span class="pwa-install-desc">Быстрый запуск с экрана и работа без интернета</span>
+                </div>
+            </div>
+            <div class="pwa-install-actions">
+                <button type="button" id="pwaInstallConfirm" class="pwa-confirm-btn">Установить</button>
+                <button type="button" id="pwaInstallDismiss" class="pwa-dismiss-btn" aria-label="Закрыть">✕</button>
+            </div>
+        </aside>
+
         <!-- Header -->
         <header class="app-header">
             <div class="brand-title">
-                <img src="./icons/icon.svg" alt="" class="brand-icon" width="32" height="32">
-                <h1 class="brand-name">Калькуляторы</h1>
+                <img src="./icons/icon.svg" alt="" class="brand-icon" width="28" height="28">
+                <h1 class="brand-name">Calc+</h1>
             </div>
             <div class="header-actions">
+                <button type="button" id="installAppBtn" class="theme-btn install-btn" aria-label="Установить приложение" style="display: none;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Установить</span>
+                </button>
                 <button type="button" id="themeToggleBtn" class="theme-btn" aria-label="Сменить тему оформления">
                     🌙 Тёмная
                 </button>

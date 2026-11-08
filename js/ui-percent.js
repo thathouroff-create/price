@@ -114,15 +114,26 @@
     valTop.appendChild(swapBtn);
     valCard.appendChild(valTop);
 
-    // Inputs Row
-    var inputsRow = document.createElement('div');
-    inputsRow.style.display = 'flex';
-    inputsRow.style.alignItems = 'center';
-    inputsRow.style.gap = '8px';
-    inputsRow.style.marginBottom = '14px';
+    // Inputs Grid (2 balanced columns with operator in between)
+    var inputsGrid = document.createElement('div');
+    inputsGrid.className = 'pct-inputs-grid';
+    inputsGrid.id = 'pctInputsGrid';
 
-    var in1Wrapper = document.createElement('div');
-    in1Wrapper.style.flex = '1';
+    // Cell 1
+    var cell1 = document.createElement('div');
+    cell1.className = 'input-cell';
+    cell1.id = 'pctCell1';
+
+    var label1 = document.createElement('label');
+    label1.className = 'pct-field-label';
+    label1.id = 'pctLabel1';
+    label1.htmlFor = 'pctInput1';
+    label1.textContent = 'ЧИСЛО 1';
+    cell1.appendChild(label1);
+
+    var wrap1 = document.createElement('div');
+    wrap1.className = 'input-with-addon';
+
     var in1 = document.createElement('input');
     in1.type = 'text';
     in1.inputMode = 'decimal';
@@ -135,21 +146,37 @@
       notifyChange();
       scheduleRecalc();
     });
-    in1Wrapper.appendChild(in1);
-    inputsRow.appendChild(in1Wrapper);
+    wrap1.appendChild(in1);
 
-    var sepLabel = document.createElement('span');
-    sepLabel.id = 'pctSepLabel';
-    sepLabel.style.color = 'var(--text-secondary)';
-    sepLabel.style.fontWeight = '700';
-    sepLabel.style.fontSize = '14px';
-    sepLabel.style.whiteSpace = 'nowrap';
-    sepLabel.textContent = '% от';
-    inputsRow.appendChild(sepLabel);
+    var addon1 = document.createElement('span');
+    addon1.className = 'input-addon';
+    addon1.id = 'pctAddon1';
+    wrap1.appendChild(addon1);
+    cell1.appendChild(wrap1);
+    inputsGrid.appendChild(cell1);
 
-    var in2Wrapper = document.createElement('div');
-    in2Wrapper.style.flex = '1';
-    in2Wrapper.id = 'pctIn2Wrapper';
+    // Operator / Separator Chip
+    var sepChip = document.createElement('div');
+    sepChip.className = 'pct-operator-chip';
+    sepChip.id = 'pctSepChip';
+    sepChip.textContent = 'от';
+    inputsGrid.appendChild(sepChip);
+
+    // Cell 2
+    var cell2 = document.createElement('div');
+    cell2.className = 'input-cell';
+    cell2.id = 'pctCell2';
+
+    var label2 = document.createElement('label');
+    label2.className = 'pct-field-label';
+    label2.id = 'pctLabel2';
+    label2.htmlFor = 'pctInput2';
+    label2.textContent = 'ЧИСЛО 2';
+    cell2.appendChild(label2);
+
+    var wrap2 = document.createElement('div');
+    wrap2.className = 'input-with-addon';
+    wrap2.id = 'pctIn2Wrapper';
 
     var in2 = document.createElement('input');
     in2.type = 'text';
@@ -163,7 +190,12 @@
       notifyChange();
       scheduleRecalc();
     });
-    in2Wrapper.appendChild(in2);
+    wrap2.appendChild(in2);
+
+    var addon2 = document.createElement('span');
+    addon2.className = 'input-addon';
+    addon2.id = 'pctAddon2';
+    wrap2.appendChild(addon2);
 
     // Alternative dropdown for NDS mode (operation 9)
     var ndsSelect = document.createElement('select');
@@ -187,20 +219,12 @@
       notifyChange();
       UiPercent.calculate();
     });
-    in2Wrapper.appendChild(ndsSelect);
+    wrap2.appendChild(ndsSelect);
 
-    inputsRow.appendChild(in2Wrapper);
+    cell2.appendChild(wrap2);
+    inputsGrid.appendChild(cell2);
 
-    var endLabel = document.createElement('span');
-    endLabel.id = 'pctEndLabel';
-    endLabel.style.color = 'var(--text-secondary)';
-    endLabel.style.fontWeight = '700';
-    endLabel.style.fontSize = '14px';
-    endLabel.style.display = 'none';
-    endLabel.textContent = '%';
-    inputsRow.appendChild(endLabel);
-
-    valCard.appendChild(inputsRow);
+    valCard.appendChild(inputsGrid);
 
     // Rounding & Decimals Controls
     var roundRow = document.createElement('div');
@@ -290,34 +314,45 @@
     var opMeta = ops[opId];
     if (!opMeta) return;
 
+    var lbl1 = document.getElementById('pctLabel1');
     var in1 = document.getElementById('pctInput1');
+    var addon1 = document.getElementById('pctAddon1');
+
+    var sep = document.getElementById('pctSepChip');
+
+    var lbl2 = document.getElementById('pctLabel2');
     var in2 = document.getElementById('pctInput2');
+    var addon2 = document.getElementById('pctAddon2');
     var ndsSelect = document.getElementById('pctNdsSelect');
-    var sep = document.getElementById('pctSepLabel');
-    var end = document.getElementById('pctEndLabel');
 
-    if (in1) in1.placeholder = opMeta.p1;
-    if (sep) sep.textContent = opMeta.sep;
-
-    if (opId === '9') {
-      // NDS mode: hide input2, show NDS select
-      if (in2) in2.style.display = 'none';
-      if (ndsSelect) ndsSelect.style.display = 'block';
-    } else {
-      if (in2) {
-        in2.style.display = 'block';
-        in2.placeholder = opMeta.p2;
-      }
-      if (ndsSelect) ndsSelect.style.display = 'none';
+    if (lbl1) lbl1.textContent = opMeta.label1 || 'ЧИСЛО 1';
+    if (in1) in1.placeholder = opMeta.placeholder1 || '0';
+    if (addon1) {
+      addon1.textContent = opMeta.addon1 || '';
+      addon1.style.display = opMeta.addon1 ? 'block' : 'none';
     }
 
-    if (end) {
-      if (opMeta.end) {
-        end.textContent = opMeta.end;
-        end.style.display = 'inline';
-      } else {
-        end.style.display = 'none';
+    if (sep) {
+      sep.textContent = opMeta.operator || opMeta.sep || '';
+    }
+
+    if (opId === '9') {
+      // NDS mode: hide input2 & addon2, show NDS select in cell2
+      if (lbl2) lbl2.textContent = 'РЕЖИМ РАСЧЁТА';
+      if (in2) in2.style.display = 'none';
+      if (addon2) addon2.style.display = 'none';
+      if (ndsSelect) ndsSelect.style.display = 'block';
+    } else {
+      if (lbl2) lbl2.textContent = opMeta.label2 || 'ЧИСЛО 2';
+      if (in2) {
+        in2.style.display = 'block';
+        in2.placeholder = opMeta.placeholder2 || '0';
       }
+      if (addon2) {
+        addon2.textContent = opMeta.addon2 || '';
+        addon2.style.display = opMeta.addon2 ? 'block' : 'none';
+      }
+      if (ndsSelect) ndsSelect.style.display = 'none';
     }
   }
 

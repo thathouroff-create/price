@@ -23,10 +23,7 @@
     applyTheme(state.theme);
     setupThemeToggle();
 
-    // 3. Setup Shell & APK button
-    setupApkButton();
-
-    // 4. Initialize Tabs
+    // 3. Initialize Tabs
     setupTabs();
 
     // 5. Initialize Sub-modules
@@ -157,21 +154,6 @@
         else if (theme === 'indigo') themeBtn.textContent = '🔮 Индиго';
       }
     }
-  }
-
-  /* --- Shell & APK Management --- */
-  function setupApkButton() {
-    var apkBtn = document.getElementById('apkDownloadBtn');
-    if (!apkBtn) return;
-
-    // Check if running inside Android WebView shell
-    var isShell = navigator.userAgent.indexOf('PriceCalcShell') !== -1;
-    if (isShell) {
-      apkBtn.style.display = 'none';
-      return;
-    }
-
-    apkBtn.href = 'https://github.com/thathouroff-create/price/releases/latest/download/PriceCalc.apk';
   }
 
   /* --- Service Worker & Update Lifecycle --- */

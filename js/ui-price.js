@@ -357,9 +357,6 @@
     var packPanel = document.createElement('div');
     packPanel.className = 'sub-panel multipack-panel' + (p.packCount > 1 ? ' open' : '');
     var packLabel = document.createElement('label');
-    packLabel.style.fontSize = '12px';
-    packLabel.style.color = 'var(--text-secondary)';
-    packLabel.style.fontWeight = '600';
     packLabel.textContent = 'Количество упаковок / штук в наборе:';
     packPanel.appendChild(packLabel);
 
@@ -368,7 +365,6 @@
     packInput.min = '1';
     packInput.max = '100';
     packInput.className = 'app-input input-pack-count';
-    packInput.style.marginTop = '6px';
     packInput.value = p.packCount || 1;
     packPanel.appendChild(packInput);
     card.appendChild(packPanel);
@@ -379,7 +375,6 @@
 
     var promoSelect = document.createElement('select');
     promoSelect.className = 'app-select select-promo';
-    promoSelect.style.marginBottom = '8px';
     PROMO_OPTIONS.forEach(function(opt) {
       var optEl = document.createElement('option');
       optEl.value = opt.key;
@@ -391,16 +386,13 @@
 
     var promoValLabel = document.createElement('label');
     promoValLabel.className = 'label-promo-val';
-    promoValLabel.style.fontSize = '12px';
-    promoValLabel.style.color = 'var(--text-secondary)';
-    promoValLabel.style.fontWeight = '600';
+    promoValLabel.textContent = '';
     promoPanel.appendChild(promoValLabel);
 
     var promoValInput = document.createElement('input');
     promoValInput.type = 'text';
     promoValInput.inputMode = 'decimal';
     promoValInput.className = 'app-input input-promo-val';
-    promoValInput.style.marginTop = '4px';
     promoValInput.value = p.promoVal || '';
     promoValInput.placeholder = '0';
     promoPanel.appendChild(promoValInput);

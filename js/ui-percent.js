@@ -42,16 +42,9 @@
     // Operation Selector Card
     var opCard = document.createElement('div');
     opCard.className = 'bento-card';
-    opCard.style.marginBottom = '14px';
 
     var opLabel = document.createElement('label');
-    opLabel.style.fontSize = '11px';
-    opLabel.style.fontWeight = '700';
-    opLabel.style.color = 'var(--text-secondary)';
-    opLabel.style.textTransform = 'uppercase';
-    opLabel.style.letterSpacing = '0.05em';
-    opLabel.style.display = 'block';
-    opLabel.style.marginBottom = '8px';
+    opLabel.className = 'pct-card-heading';
     opLabel.textContent = 'ЧТО ВЫЧИСЛИТЬ';
     opCard.appendChild(opLabel);
 
@@ -254,21 +247,15 @@
 
     // Rounding & Decimals Controls
     var roundRow = document.createElement('div');
-    roundRow.style.display = 'flex';
-    roundRow.style.alignItems = 'center';
-    roundRow.style.gap = '10px';
+    roundRow.className = 'pct-round-row';
 
     var roundLabel = document.createElement('span');
-    roundLabel.style.fontSize = '13px';
-    roundLabel.style.color = 'var(--text-secondary)';
+    roundLabel.className = 'pct-round-label';
     roundLabel.textContent = 'Округлять до:';
     roundRow.appendChild(roundLabel);
 
     var roundSelect = document.createElement('select');
-    roundSelect.className = 'app-select';
-    roundSelect.style.width = '70px';
-    roundSelect.style.minHeight = '36px';
-    roundSelect.style.padding = '6px 10px';
+    roundSelect.className = 'app-select pct-round-select';
     [0, 1, 2, 3, 4].forEach(function(d) {
       var rOpt = document.createElement('option');
       rOpt.value = String(d);
@@ -285,8 +272,7 @@
     roundRow.appendChild(roundSelect);
 
     var signsLabel = document.createElement('span');
-    signsLabel.style.fontSize = '13px';
-    signsLabel.style.color = 'var(--text-muted)';
+    signsLabel.className = 'pct-signs-label';
     signsLabel.textContent = 'знаков после запятой';
     roundRow.appendChild(signsLabel);
 
@@ -430,8 +416,7 @@
     if (result.error) {
       if (resCard && resVal) {
         resVal.textContent = result.error;
-        resVal.style.fontSize = '18px';
-        resVal.style.color = 'var(--red-light)';
+        resVal.classList.add('error');
         if (formulaBox) formulaBox.textContent = '';
         if (stepBox) stepBox.textContent = '';
         resCard.classList.add('visible');
@@ -440,8 +425,7 @@
     }
 
     if (resCard && resVal && formulaBox && stepBox) {
-      resVal.style.fontSize = '24px';
-      resVal.style.color = 'var(--accent-light)';
+      resVal.classList.remove('error');
       resVal.textContent = result.display;
       formulaBox.textContent = result.formula;
       stepBox.textContent = result.step;
